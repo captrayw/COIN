@@ -51,6 +51,12 @@
   <div style="margin-bottom:20px">
     <button class="btn" style="background:linear-gradient(135deg,#e04060,#a02040);color:#fff" onclick="globalReset()">🔄 Clear All Cooldowns</button>
   </div>
+  <div class="section-title">Manual score entry (for testing)</div>
+  <div class="grant-form" style="margin-bottom:20px">
+    <input type="text" id="testName" placeholder="Player name" />
+    <input type="number" id="testScore" placeholder="Score" style="width:80px" />
+    <button class="btn small" onclick="addScore()">Add Score</button>
+  </div>
   <div class="section-title">Grant extra coin to a specific player</div>
   <div class="grant-form">
     <input type="text" id="manualName" placeholder="Player name" />
@@ -105,6 +111,22 @@
         <td>${has ? '' : `<button class="btn green small" onclick="grant('${esc(s.name)}')">Grant Coin</button>`}</td>
       </tr>`;
     }).join('');
+  }
+
+  async function addScore() {
+    const name  = document.getElementById('testName').value.trim();
+    const score = parseInt(document.getElementById('testScore').value);
+    if (!name || isNaN(score)) { showMsg('Enter a name and score', true); return; }
+    try {
+      const res  = await fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score })
+      });
+      const data = await res.json();
+      if (data.ok) { showMsg(`✓ Score added: ${name} → ${score}`); load(); }
+      else showMsg(data.error, true);
+    } catch(e) { showMsg('Error: ' + e.message, true); }
   }
 
   async function globalReset() {
