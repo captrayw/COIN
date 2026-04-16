@@ -272,6 +272,88 @@
     .overlay-petray { font-size: 0.8rem; color: #666; margin-top: 10px; border-top: 1px solid #1e1e38; padding-top: 12px; width: 100%; text-align: center; }
     .overlay-petray a { color: #f0c040; text-decoration: none; }
     .overlay-petray a:hover { text-decoration: underline; }
+    .extra-life-btn {
+      width: 100%; padding: 12px;
+      font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em;
+      background: linear-gradient(135deg, #40e090, #20a060);
+      border: none; border-radius: 10px; color: #001a0a;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 18px #40e09033;
+      margin-top: 4px;
+    }
+    .extra-life-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .extra-life-btn:active { transform: translateY(1px); }
+
+    /* ── Intro Modal ── */
+    .intro-overlay {
+      position: fixed; inset: 0;
+      background: rgba(8,8,20,0.96);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+      backdrop-filter: blur(8px);
+    }
+    .intro-overlay.hidden { display: none; }
+    .intro-card {
+      background: #151525;
+      border: 1px solid #3a3a60;
+      border-radius: 22px;
+      padding: 38px 44px;
+      max-width: 400px; width: 90%;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      box-shadow: 0 0 60px #00000088;
+    }
+    .intro-logo { font-size: 3rem; }
+    .intro-title { font-size: 1.7rem; font-weight: 800; color: #f0c040; text-shadow: 0 0 18px #f0c04066; }
+    .intro-rules {
+      background: #0f0f1e; border-radius: 12px; padding: 16px 20px;
+      width: 100%; font-size: 0.86rem; line-height: 2; color: #888;
+      list-style: none;
+    }
+    .intro-rules li::before { content: '›  '; color: #f0c040; }
+    .intro-rules b { color: #ddd; }
+    .intro-goal {
+      font-size: 0.9rem; color: #f0c040; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .name-input {
+      width: 100%;
+      background: #1a1a2e; border: 1px solid #3a3a60; border-radius: 10px;
+      color: #e8e8f0; font-size: 1.05rem; padding: 10px 14px;
+      text-align: center; outline: none; transition: border-color 0.2s;
+    }
+    .name-input:focus { border-color: #f0c040; }
+    .name-input::placeholder { color: #444; }
+    .start-btn {
+      width: 100%; padding: 13px;
+      font-size: 1.05rem; font-weight: 700; letter-spacing: 0.05em;
+      background: linear-gradient(135deg, #f0c040, #c8900a);
+      border: none; border-radius: 10px; color: #1a1000;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 18px #f0c04033;
+    }
+    .start-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .start-btn:active { transform: translateY(1px); }
+
+    /* ── Leaderboard (inside bust overlay) ── */
+    .lb-wrap {
+      width: 100%; margin-top: 12px;
+      border-top: 1px solid #1e1e38; padding-top: 14px;
+    }
+    .lb-title {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+      color: #555; text-align: center; margin-bottom: 10px;
+    }
+    .lb-list { display: flex; flex-direction: column; gap: 4px; }
+    .lb-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 7px;
+      font-size: 0.83rem;
+    }
+    .lb-row.me { background: #f0c04014; border: 1px solid #f0c04030; }
+    .lb-rank { color: #444; width: 18px; flex-shrink: 0; font-size: 0.75rem; }
+    .lb-name { flex: 1; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-name.me-name { color: #f0c040; }
+    .lb-score { color: #f0c040; font-weight: 700; flex-shrink: 0; }
+    .lb-loading { color: #444; text-align: center; font-size: 0.8rem; padding: 8px 0; }
   </style>
 </head>
 <body>
@@ -352,7 +434,32 @@
     <div class="overlay-countdown" id="overlayCountdown">00:00:00</div>
     <div class="overlay-hs">All-time High &nbsp;<b id="overlayHs">—</b></div>
     <div class="overlay-note">Resets at midnight EST</div>
+    <button class="extra-life-btn" id="extraLifeBtn" style="display:none" onclick="useExtraLife()">🎁 Use your extra coin from Petray</button>
     <div class="overlay-petray">or message <a href="https://www.linkedin.com/in/petraywoo/" target="_blank">Petray</a> for one more coin</div>
+    <div class="lb-wrap">
+      <div class="lb-title">🏆 Leaderboard</div>
+      <div class="lb-list" id="lbList">
+        <div class="lb-loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Intro overlay -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-card">
+    <div class="intro-logo">🪙</div>
+    <div class="intro-title">Coin Flip</div>
+    <ul class="intro-rules">
+      <li>Start with <b>10 coins</b> every day</li>
+      <li>Choose your <b>wager</b> (up to your balance)</li>
+      <li><b>Heads</b> → win your wager &nbsp;·&nbsp; <b>Tails</b> → lose it</li>
+      <li>Game over when your balance hits <b>zero</b></li>
+      <li>Resets every day at <b>midnight EST</b></li>
+    </ul>
+    <div class="intro-goal">🏆 Goal: reach the highest bankroll</div>
+    <input class="name-input" id="nameField" type="text" maxlength="30" placeholder="Enter your name to play" />
+    <button class="start-btn" onclick="startGame()">Start Playing</button>
   </div>
 </div>
 
@@ -707,6 +814,105 @@
   window.addEventListener('resize', () => { resizeCanvas(); drawChart(); });
 
   /* ═══════════════════════════════════════
+     Player Name
+  ═══════════════════════════════════════ */
+  let playerName = localStorage.getItem('cf_name') || '';
+
+  function startGame() {
+    const field = document.getElementById('nameField');
+    const name  = field.value.trim();
+    if (!name) { field.focus(); field.style.borderColor = '#e04060'; return; }
+    field.style.borderColor = '';
+    playerName = name;
+    localStorage.setItem('cf_name', name);
+    document.getElementById('introOverlay').classList.add('hidden');
+  }
+
+  document.getElementById('nameField').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startGame();
+  });
+
+  /* ═══════════════════════════════════════
+     Leaderboard
+  ═══════════════════════════════════════ */
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function submitScore(name, score) {
+    try {
+      await fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score })
+      });
+    } catch(e) { console.warn('submitScore failed', e); }
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch('/api/scores');
+      return await res.json();
+    } catch(e) { return []; }
+  }
+
+  function renderLeaderboard(rows) {
+    const list = document.getElementById('lbList');
+    if (!rows || !rows.length) {
+      list.innerHTML = '<div class="lb-loading">No scores yet — be the first!</div>';
+      return;
+    }
+    const me = playerName.trim().toLowerCase();
+    list.innerHTML = rows.map((r, i) => {
+      const isMe = r.name.trim().toLowerCase() === me;
+      return `<div class="lb-row ${isMe ? 'me' : ''}">
+        <span class="lb-rank">${i + 1}</span>
+        <span class="lb-name ${isMe ? 'me-name' : ''}">${escHtml(r.name)}${isMe ? ' ◀' : ''}</span>
+        <span class="lb-score">${r.score}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function checkExtraLife() {
+    try {
+      const res  = await fetch(`/api/extra-life?name=${encodeURIComponent(playerName || '')}`);
+      const data = await res.json();
+      document.getElementById('extraLifeBtn').style.display = data.hasLife ? 'block' : 'none';
+    } catch(e) { /* silently ignore */ }
+  }
+
+  async function useExtraLife() {
+    try {
+      await fetch('/api/use-life', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: playerName })
+      });
+    } catch(e) { /* silently ignore */ }
+    // Reset today's session
+    balance = START;
+    history = [START];
+    wins = 0; losses = 0; flips = 0;
+    busted = false;
+    document.getElementById('historyList').innerHTML = '';
+    document.getElementById('extraLifeBtn').style.display = 'none';
+    document.getElementById('overlay').classList.add('hidden');
+    if (countdownTimer) clearInterval(countdownTimer);
+    wagerInput.value = 1;
+    resultMsg.textContent = '🎁 Petray gave you one more coin!';
+    resultMsg.className   = 'result-msg win';
+    try { saveState(); } catch(e) {}
+    updateUI();
+  }
+
+  async function finishAndShowOverlay() {
+    await submitScore(playerName || 'Anonymous', highScore);
+    const [rows] = await Promise.all([loadLeaderboard(), checkExtraLife()]);
+    renderLeaderboard(rows);
+    showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust');
+  }
+
+  /* ═══════════════════════════════════════
      Game Logic
   ═══════════════════════════════════════ */
   function flip() {
@@ -766,7 +972,7 @@
       updateUI();
 
       if (busted) {
-        setTimeout(() => showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust'), 700);
+        setTimeout(() => finishAndShowOverlay(), 700);
       }
     }, 950);
   }
@@ -780,7 +986,15 @@
 
   // If already busted today, show overlay immediately
   if (busted) {
+    Promise.all([loadLeaderboard(), checkExtraLife()]).then(([rows]) => renderLeaderboard(rows));
     showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust');
+  }
+
+  // Show intro if no name saved
+  if (!playerName) {
+    document.getElementById('introOverlay').classList.remove('hidden'); // it starts visible
+  } else {
+    document.getElementById('introOverlay').classList.add('hidden');
   }
 </script>
 </body>
