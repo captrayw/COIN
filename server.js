@@ -25,6 +25,10 @@ if (process.env.DATABASE_URL) {
       name       TEXT PRIMARY KEY,
       granted_at TIMESTAMP DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `).catch(console.error);
 }
 
@@ -88,6 +92,29 @@ app.post('/api/use-life', async (req, res) => {
   if (!name) return res.status(400).json({ error: 'Missing name' });
   try {
     await pool.query('DELETE FROM extra_lives WHERE name = $1', [name.trim()]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Global Reset ──
+app.get('/api/reset-check', async (req, res) => {
+  if (!pool) return res.json({ ts: 0 });
+  try {
+    const { rows } = await pool.query("SELECT value FROM settings WHERE key = 'global_reset_ts'");
+    res.json({ ts: rows.length ? parseInt(rows[0].value) : 0 });
+  } catch (e) { res.json({ ts: 0 }); }
+});
+
+app.post('/api/global-reset', async (req, res) => {
+  const { secret } = req.body;
+  if (!secret || secret !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Forbidden' });
+  if (!pool) return res.json({ ok: true });
+  try {
+    const ts = Date.now().toString();
+    await pool.query(`
+      INSERT INTO settings (key, value) VALUES ('global_reset_ts', $1)
+      ON CONFLICT (key) DO UPDATE SET value = $1
+    `, [ts]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

@@ -47,6 +47,10 @@
 </div>
 
 <div id="panel" style="display:none">
+  <div class="section-title">Global actions</div>
+  <div style="margin-bottom:20px">
+    <button class="btn" style="background:linear-gradient(135deg,#e04060,#a02040);color:#fff" onclick="globalReset()">🔄 Clear All Cooldowns</button>
+  </div>
   <div class="section-title">Grant extra coin to a specific player</div>
   <div class="grant-form">
     <input type="text" id="manualName" placeholder="Player name" />
@@ -101,6 +105,21 @@
         <td>${has ? '' : `<button class="btn green small" onclick="grant('${esc(s.name)}')">Grant Coin</button>`}</td>
       </tr>`;
     }).join('');
+  }
+
+  async function globalReset() {
+    if (!confirm('This will clear the cooldown for ALL players. Continue?')) return;
+    const secret = document.getElementById('secret').value;
+    try {
+      const res  = await fetch('/api/global-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret })
+      });
+      const data = await res.json();
+      if (data.ok) showMsg('✓ All cooldowns cleared — players can flip again immediately');
+      else showMsg(data.error, true);
+    } catch(e) { showMsg('Error: ' + e.message, true); }
   }
 
   async function grant(name) {

@@ -509,6 +509,7 @@
     LOSSES: 'cf_losses',
     FLIPS:  'cf_flips',
     BUSTED: 'cf_busted',
+    BUSTED_TS: 'cf_busted_ts',
   };
 
   let balance, history, highScore, wins, losses, flips, busted;
@@ -524,6 +525,7 @@
     localStorage.setItem(LS.LOSSES, losses);
     localStorage.setItem(LS.FLIPS,  flips);
     localStorage.setItem(LS.BUSTED, busted ? '1' : '0');
+    if (busted) localStorage.setItem(LS.BUSTED_TS, Date.now().toString());
   }
 
   function loadState() {
@@ -984,10 +986,26 @@
   resizeCanvas();
   updateUI();
 
-  // If already busted today, show overlay immediately
+  // If already busted today, check global reset first then show overlay
   if (busted) {
-    Promise.all([loadLeaderboard(), checkExtraLife()]).then(([rows]) => renderLeaderboard(rows));
-    showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust');
+    (async () => {
+      try {
+        const res  = await fetch('/api/reset-check');
+        const data = await res.json();
+        const bustedTs = parseInt(localStorage.getItem(LS.BUSTED_TS) || '0');
+        if (data.ts > bustedTs) {
+          // Admin triggered a global reset after this player busted — clear it
+          busted = false;
+          localStorage.setItem(LS.BUSTED, '0');
+          localStorage.removeItem(LS.BUSTED_TS);
+          try { saveState(); } catch(e) {}
+          updateUI();
+          return;
+        }
+      } catch(e) { /* ignore, just show overlay */ }
+      Promise.all([loadLeaderboard(), checkExtraLife()]).then(([rows]) => renderLeaderboard(rows));
+      showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust');
+    })();
   }
 
   // Show intro if no name saved
