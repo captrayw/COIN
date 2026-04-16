@@ -206,6 +206,28 @@
     }
     .chart-tooltip b { color: #f0c040; }
 
+    /* ── Main Leaderboard ── */
+    .main-lb-wrap {
+      width: 100%; max-width: 860px;
+      background: #13132a; border: 1px solid #2a2a45; border-radius: 16px;
+      padding: 18px 20px;
+    }
+    .main-lb-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .main-lb-title { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
+    .main-lb-body { display: flex; flex-direction: column; gap: 5px; }
+    .main-lb-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 12px; border-radius: 8px; font-size: 0.85rem;
+    }
+    .main-lb-row.me { background: #f0c04014; border: 1px solid #f0c04030; }
+    .main-lb-rank { color: #444; width: 22px; flex-shrink: 0; }
+    .main-lb-name { flex: 1; color: #bbb; }
+    .main-lb-name.me { color: #f0c040; }
+    .main-lb-score { color: #f0c040; font-weight: 700; }
+    .main-lb-empty { color: #3a3a55; font-size: 0.82rem; text-align: center; padding: 12px 0; }
+
     /* ── History ── */
     .history-box { width: 100%; max-width: 860px; }
     .history-label { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 7px; }
@@ -421,6 +443,16 @@
 <div class="history-box">
   <div class="history-label">History</div>
   <div class="history-list" id="historyList"></div>
+</div>
+
+<!-- Main Leaderboard -->
+<div class="main-lb-wrap">
+  <div class="main-lb-header">
+    <span class="main-lb-title">🏆 Leaderboard</span>
+  </div>
+  <div class="main-lb-body" id="mainLbList">
+    <div class="main-lb-empty">Loading…</div>
+  </div>
 </div>
 
 <!-- Busted overlay -->
@@ -985,6 +1017,25 @@
   loadState();
   resizeCanvas();
   updateUI();
+
+  // Render main page leaderboard
+  function renderMainLeaderboard(rows) {
+    const el = document.getElementById('mainLbList');
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="main-lb-empty">No scores yet — be the first!</div>';
+      return;
+    }
+    const me = (playerName || '').trim().toLowerCase();
+    el.innerHTML = rows.map((r, i) => {
+      const isMe = r.name.trim().toLowerCase() === me;
+      return `<div class="main-lb-row ${isMe ? 'me' : ''}">
+        <span class="main-lb-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+        <span class="main-lb-name ${isMe ? 'me' : ''}">${escHtml(r.name)}${isMe ? ' ◀' : ''}</span>
+        <span class="main-lb-score">${r.score}</span>
+      </div>`;
+    }).join('');
+  }
+  loadLeaderboard().then(renderMainLeaderboard);
 
   // If already busted today, check global reset first then show overlay
   if (busted) {
