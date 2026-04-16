@@ -14,22 +14,22 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html'))
 let pool;
 if (process.env.DATABASE_URL) {
   pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-  pool.query(`
-    CREATE TABLE IF NOT EXISTS scores (
+  Promise.all([
+    pool.query(`CREATE TABLE IF NOT EXISTS scores (
       id         SERIAL PRIMARY KEY,
       name       TEXT UNIQUE NOT NULL,
       score      INTEGER NOT NULL,
       updated_at TIMESTAMP DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS extra_lives (
+    )`),
+    pool.query(`CREATE TABLE IF NOT EXISTS extra_lives (
       name       TEXT PRIMARY KEY,
       granted_at TIMESTAMP DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS settings (
+    )`),
+    pool.query(`CREATE TABLE IF NOT EXISTS settings (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
-    );
-  `).catch(console.error);
+    )`),
+  ]).catch(console.error);
 }
 
 // ── Scores ──
