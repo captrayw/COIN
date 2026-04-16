@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coin Flip</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── Header ── */
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    h1 {
+      font-size: 1.8rem;
+      letter-spacing: 0.08em;
+      color: #f0c040;
+      text-shadow: 0 0 18px #f0c04066;
+    }
+    .hs-badge {
+      background: #1a1a2e;
+      border: 1px solid #2e2e50;
+      border-radius: 10px;
+      padding: 6px 18px;
+      text-align: center;
+    }
+    .hs-label { font-size: 0.62rem; color: #555; text-transform: uppercase; letter-spacing: 0.1em; display: block; }
+    .hs-value { font-size: 1.3rem; font-weight: 700; color: #f0c040; }
+
+    /* ── Top row ── */
+    .top-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .balance-box {
+      background: #1a1a2e;
+      border: 1px solid #2e2e50;
+      border-radius: 14px;
+      padding: 14px 32px;
+      text-align: center;
+      min-width: 150px;
+    }
+    .balance-label { font-size: 0.75rem; color: #888; letter-spacing: 0.1em; text-transform: uppercase; }
+    .balance-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #f0c040;
+      transition: color 0.3s;
+    }
+    .balance-value.win  { color: #40e090; }
+    .balance-value.lose { color: #e04060; }
+
+    .center-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── Coin ── */
+    .coin-scene { width: 120px; height: 120px; perspective: 600px; }
+    .coin {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      border-radius: 50%;
+    }
+    .coin-face {
+      position: absolute;
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      backface-visibility: hidden;
+      box-shadow: 0 0 24px #0008;
+    }
+    .coin-heads { background: radial-gradient(circle at 35% 35%, #ffe066, #c8900a); border: 4px solid #f0c040; }
+    .coin-tails { background: radial-gradient(circle at 35% 35%, #d0d0e0, #7080a0); border: 4px solid #a0aac0; transform: rotateY(180deg); }
+
+    .result-msg {
+      font-size: 1rem;
+      font-weight: 600;
+      min-height: 1.4em;
+      text-align: center;
+    }
+    .result-msg.win  { color: #40e090; }
+    .result-msg.lose { color: #e04060; }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 300px;
+    }
+    .wager-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .wager-row label { font-size: 0.82rem; color: #aaa; white-space: nowrap; }
+    .wager-input {
+      flex: 1;
+      background: #1a1a2e;
+      border: 1px solid #3a3a60;
+      border-radius: 8px;
+      color: #e8e8f0;
+      font-size: 1.05rem;
+      padding: 7px 10px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .wager-input:focus { border-color: #f0c040; }
+    .quick-btns { display: flex; gap: 6px; }
+    .quick-btn {
+      background: #1a1a2e;
+      border: 1px solid #3a3a60;
+      border-radius: 6px;
+      color: #ccc;
+      font-size: 0.78rem;
+      padding: 4px 9px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .quick-btn:hover { background: #2a2a50; border-color: #f0c040; color: #f0c040; }
+
+    .flip-btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, #f0c040, #c8900a);
+      border: none;
+      border-radius: 10px;
+      color: #1a1000;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 18px #f0c04033;
+    }
+    .flip-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .flip-btn:active:not(:disabled) { transform: translateY(1px); }
+    .flip-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Stats ── */
+    .stats { display: flex; gap: 20px; font-size: 0.78rem; color: #666; }
+    .stats span b { color: #aaa; }
+
+    /* ── Chart ── */
+    .chart-wrap {
+      width: 100%;
+      max-width: 860px;
+      background: #13132a;
+      border: 1px solid #2a2a45;
+      border-radius: 16px;
+      padding: 18px 20px 14px;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .chart-title { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
+    .chart-return { font-size: 1.15rem; font-weight: 700; }
+    .chart-return.pos { color: #40e090; }
+    .chart-return.neg { color: #e04060; }
+    .chart-return.neu { color: #888; }
+    canvas#chart { width: 100%; display: block; cursor: crosshair; }
+
+    .chart-tooltip {
+      position: fixed;
+      background: #1e1e38;
+      border: 1px solid #3a3a60;
+      border-radius: 7px;
+      padding: 6px 11px;
+      font-size: 0.78rem;
+      color: #e8e8f0;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+      white-space: nowrap;
+    }
+    .chart-tooltip b { color: #f0c040; }
+
+    /* ── History ── */
+    .history-box { width: 100%; max-width: 860px; }
+    .history-label { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 7px; }
+    .history-list { display: flex; flex-wrap: wrap; gap: 5px; max-height: 80px; overflow-y: auto; }
+    .history-chip { font-size: 0.74rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .history-chip.win  { background: #40e09022; color: #40e090; border: 1px solid #40e09055; }
+    .history-chip.lose { background: #e0406022; color: #e04060; border: 1px solid #e0406055; }
+
+    /* ── Overlay (busted / locked) ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 8, 20, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .overlay.hidden { display: none; }
+
+    .overlay-card {
+      background: #151525;
+      border: 1px solid #3a3a60;
+      border-radius: 22px;
+      padding: 44px 52px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 60px #00000088, 0 0 0 1px #ffffff08;
+      max-width: 360px;
+      width: 90%;
+    }
+    .overlay-icon { font-size: 3.2rem; line-height: 1; }
+    .overlay-title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      margin-top: 4px;
+    }
+    .overlay-title.bust  { color: #e04060; }
+    .overlay-sub { color: #666; font-size: 0.88rem; }
+    .overlay-divider { width: 60px; height: 1px; background: #2a2a45; margin: 10px 0; }
+    .overlay-cd-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.12em; }
+    .overlay-countdown {
+      font-size: 3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+      color: #f0c040;
+      text-shadow: 0 0 20px #f0c04055;
+      line-height: 1;
+    }
+    .overlay-hs {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #555;
+    }
+    .overlay-hs b { color: #f0c040; font-size: 1rem; }
+    .overlay-note { font-size: 0.72rem; color: #3a3a55; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header-row">
+  <h1>Coin Flip</h1>
+  <div class="hs-badge">
+    <span class="hs-label">All-time High</span>
+    <span class="hs-value" id="hsDisplay">—</span>
+  </div>
+</div>
+
+<!-- Top row -->
+<div class="top-row">
+  <div class="balance-box">
+    <div class="balance-label">Balance</div>
+    <div class="balance-value" id="balance">10</div>
+  </div>
+
+  <div class="center-col">
+    <div class="coin-scene">
+      <div class="coin" id="coin">
+        <div class="coin-face coin-heads">🪙</div>
+        <div class="coin-face coin-tails">💀</div>
+      </div>
+    </div>
+    <div class="result-msg" id="resultMsg"></div>
+  </div>
+
+  <div class="controls">
+    <div class="wager-row">
+      <label>Wager</label>
+      <input class="wager-input" type="number" id="wagerInput" value="1" min="1" step="1" />
+    </div>
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="setWager(1)">×1</button>
+      <button class="quick-btn" onclick="halfWager()">½</button>
+      <button class="quick-btn" onclick="doubleWager()">×2</button>
+      <button class="quick-btn" onclick="maxWager()">Max</button>
+    </div>
+    <button class="flip-btn" id="flipBtn" onclick="flip()">FLIP</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <span>Wins: <b id="statWins">0</b></span>
+  <span>Losses: <b id="statLosses">0</b></span>
+  <span>Flips: <b id="statFlips">0</b></span>
+</div>
+
+<!-- Chart -->
+<div class="chart-wrap">
+  <div class="chart-header">
+    <span class="chart-title">Bankroll · Today's Session</span>
+    <span class="chart-return neu" id="chartReturn">+0.00%</span>
+  </div>
+  <canvas id="chart" height="220"></canvas>
+</div>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<!-- History -->
+<div class="history-box">
+  <div class="history-label">History</div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<!-- Busted overlay -->
+<div class="overlay hidden" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon" id="overlayIcon">💀</div>
+    <div class="overlay-title bust" id="overlayTitle">BUSTED</div>
+    <div class="overlay-sub" id="overlaySub">Your bankroll hit zero</div>
+    <div class="overlay-divider"></div>
+    <div class="overlay-cd-label">Try again in</div>
+    <div class="overlay-countdown" id="overlayCountdown">00:00:00</div>
+    <div class="overlay-hs">All-time High &nbsp;<b id="overlayHs">—</b></div>
+    <div class="overlay-note">Resets at midnight EST</div>
+  </div>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════
+     ET / Time Utilities
+  ═══════════════════════════════════════ */
+  function getETDateStr() {
+    // Returns "YYYY-MM-DD" in America/New_York time
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  }
+
+  function getMsUntilMidnightET() {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+    }).formatToParts(now);
+    let h = 0, m = 0, s = 0;
+    for (const { type, value } of parts) {
+      if (type === 'hour')   h = value === '24' ? 0 : +value;
+      if (type === 'minute') m = +value;
+      if (type === 'second') s = +value;
+    }
+    const elapsed = h * 3600 + m * 60 + s;
+    return Math.max(0, (86400 - elapsed) * 1000);
+  }
+
+  function formatCountdown(ms) {
+    const t = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = t % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  /* ═══════════════════════════════════════
+     State & Storage
+  ═══════════════════════════════════════ */
+  const START = 10;
+  const LS = {
+    DATE:   'cf_date',
+    BAL:    'cf_balance',
+    HIST:   'cf_history',
+    HIGH:   'cf_high',
+    WINS:   'cf_wins',
+    LOSSES: 'cf_losses',
+    FLIPS:  'cf_flips',
+    BUSTED: 'cf_busted',
+  };
+
+  let balance, history, highScore, wins, losses, flips, busted;
+  let busy = false;
+  let countdownTimer = null;
+
+  function saveState() {
+    localStorage.setItem(LS.DATE,   getETDateStr());
+    localStorage.setItem(LS.BAL,    balance);
+    localStorage.setItem(LS.HIST,   JSON.stringify(history));
+    localStorage.setItem(LS.HIGH,   highScore);
+    localStorage.setItem(LS.WINS,   wins);
+    localStorage.setItem(LS.LOSSES, losses);
+    localStorage.setItem(LS.FLIPS,  flips);
+    localStorage.setItem(LS.BUSTED, busted ? '1' : '0');
+  }
+
+  function loadState() {
+    const savedDate = localStorage.getItem(LS.DATE);
+    const today     = getETDateStr();
+
+    // High score persists forever
+    highScore = parseFloat(localStorage.getItem(LS.HIGH)) || START;
+
+    if (savedDate === today) {
+      // Restore today's session
+      balance = parseFloat(localStorage.getItem(LS.BAL)) ?? START;
+      history = JSON.parse(localStorage.getItem(LS.HIST) || `[${START}]`);
+      wins    = parseInt(localStorage.getItem(LS.WINS))   || 0;
+      losses  = parseInt(localStorage.getItem(LS.LOSSES)) || 0;
+      flips   = parseInt(localStorage.getItem(LS.FLIPS))  || 0;
+      busted  = localStorage.getItem(LS.BUSTED) === '1';
+    } else {
+      // New day — fresh session
+      balance = START;
+      history = [START];
+      wins    = 0;
+      losses  = 0;
+      flips   = 0;
+      busted  = false;
+      saveState();
+    }
+
+    // Restore history chips
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    // history[0] is the starting balance, chips start from index 1
+    for (let i = history.length - 1; i >= 1; i--) {
+      const diff = history[i] - history[i - 1];
+      const chip = document.createElement('span');
+      chip.className = 'history-chip ' + (diff >= 0 ? 'win' : 'lose');
+      chip.textContent = (diff >= 0 ? '+' : '') + diff;
+      list.appendChild(chip);
+    }
+  }
+
+  /* ═══════════════════════════════════════
+     Overlay / Countdown
+  ═══════════════════════════════════════ */
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    function tick() {
+      const ms = getMsUntilMidnightET();
+      document.getElementById('overlayCountdown').textContent = formatCountdown(ms);
+      if (ms <= 500) {
+        clearInterval(countdownTimer);
+        location.reload();
+      }
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
+
+  function showOverlay(icon, title, sub, titleClass) {
+    document.getElementById('overlayIcon').textContent  = icon;
+    document.getElementById('overlayTitle').textContent = title;
+    document.getElementById('overlayTitle').className   = 'overlay-title ' + (titleClass || 'bust');
+    document.getElementById('overlaySub').textContent   = sub;
+    syncHighScoreUI();
+    document.getElementById('overlay').classList.remove('hidden');
+    startCountdown();
+  }
+
+  /* ═══════════════════════════════════════
+     UI Helpers
+  ═══════════════════════════════════════ */
+  const balanceEl   = document.getElementById('balance');
+  const coinEl      = document.getElementById('coin');
+  const flipBtn     = document.getElementById('flipBtn');
+  const resultMsg   = document.getElementById('resultMsg');
+  const wagerInput  = document.getElementById('wagerInput');
+  const canvas      = document.getElementById('chart');
+  const ctx         = canvas.getContext('2d');
+  const tooltip     = document.getElementById('tooltip');
+  const chartReturn = document.getElementById('chartReturn');
+
+  function syncHighScoreUI() {
+    const v = highScore.toFixed ? highScore : START;
+    document.getElementById('hsDisplay').textContent     = v;
+    document.getElementById('overlayHs').textContent     = v;
+  }
+
+  function updateReturn() {
+    const ret  = ((balance - START) / START) * 100;
+    const sign = ret >= 0 ? '+' : '';
+    chartReturn.textContent = `${sign}${ret.toFixed(2)}%`;
+    chartReturn.className   = 'chart-return ' + (ret > 0 ? 'pos' : ret < 0 ? 'neg' : 'neu');
+  }
+
+  function updateUI() {
+    balanceEl.textContent = balance;
+    document.getElementById('statWins').textContent   = wins;
+    document.getElementById('statLosses').textContent = losses;
+    document.getElementById('statFlips').textContent  = flips;
+    flipBtn.disabled = busy || balance <= 0 || busted;
+    if (parseInt(wagerInput.value) > balance) wagerInput.value = Math.max(1, balance);
+    updateReturn();
+    syncHighScoreUI();
+    drawChart();
+  }
+
+  function getWager() {
+    let w = parseInt(wagerInput.value, 10);
+    if (isNaN(w) || w < 1) w = 1;
+    if (w > balance) w = balance;
+    wagerInput.value = w;
+    return w;
+  }
+
+  function setWager(v)   { wagerInput.value = Math.min(balance, v); }
+  function halfWager()   { wagerInput.value = Math.max(1, Math.floor(parseInt(wagerInput.value||1) / 2)); }
+  function doubleWager() { wagerInput.value = Math.min(balance, (parseInt(wagerInput.value||1)) * 2); }
+  function maxWager()    { wagerInput.value = balance; }
+
+  function addHistoryChip(won, diff) {
+    const chip = document.createElement('span');
+    chip.className = 'history-chip ' + (won ? 'win' : 'lose');
+    chip.textContent = (won ? '+' : '') + diff;
+    document.getElementById('historyList').prepend(chip);
+  }
+
+  /* ═══════════════════════════════════════
+     Chart
+  ═══════════════════════════════════════ */
+  const PAD = { top: 14, right: 16, bottom: 36, left: 52 };
+
+  function dpr() { return window.devicePixelRatio || 1; }
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const r    = dpr();
+    canvas.width  = rect.width * r;
+    canvas.height = 220 * r;
+    ctx.scale(r, r);
+  }
+
+  function drawChart(highlightIdx = -1) {
+    const W = canvas.width  / dpr();
+    const H = canvas.height / dpr();
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top  - PAD.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const vals = history;
+    const n    = vals.length;
+    const minV = Math.min(...vals, START);
+    const maxV = Math.max(...vals, START);
+    const span = (maxV - minV) || 2;
+    const pad  = span * 0.15;
+    const lo   = minV - pad;
+    const hi   = maxV + pad;
+    const range = hi - lo;
+
+    function xOf(i) { return PAD.left + (i / Math.max(n - 1, 1)) * plotW; }
+    function yOf(v) { return PAD.top  + (1 - (v - lo) / range) * plotH; }
+
+    // Grid lines + Y labels
+    ctx.font      = `11px 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const gridN = 5;
+    for (let i = 0; i <= gridN; i++) {
+      const v = lo + (range * i) / gridN;
+      const y = yOf(v);
+      ctx.strokeStyle = '#1c1c38';
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y); ctx.stroke();
+      ctx.fillStyle = '#44445a';
+      ctx.fillText(v.toFixed(1), PAD.left - 6, y);
+    }
+
+    // X labels
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = '#44445a';
+    const maxLab = Math.min(n, 9);
+    const step   = Math.max(1, Math.floor((n - 1) / (maxLab - 1)));
+    for (let i = 0; i < n; i += step) ctx.fillText(i, xOf(i), PAD.top + plotH + 8);
+    if (n > 1 && (n - 1) % step !== 0) ctx.fillText(n - 1, xOf(n - 1), PAD.top + plotH + 8);
+
+    // Baseline (START)
+    const baseY = yOf(START);
+    ctx.strokeStyle = '#2e2e50';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, baseY); ctx.lineTo(PAD.left + plotW, baseY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // "Start" label on baseline
+    ctx.font      = '10px Segoe UI';
+    ctx.fillStyle = '#3a3a5a';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('start', PAD.left + 4, baseY - 3);
+
+    if (n < 2) return;
+
+    const last    = vals[n - 1];
+    const isUp    = last >= START;
+    const lineClr = isUp ? '#40e090' : '#e04060';
+    const fillTop = isUp ? 'rgba(64,224,144,0.16)' : 'rgba(224,64,96,0.16)';
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + plotH);
+    grad.addColorStop(0, fillTop);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(vals[0]));
+    for (let i = 1; i < n; i++) ctx.lineTo(xOf(i), yOf(vals[i]));
+    ctx.lineTo(xOf(n - 1), PAD.top + plotH);
+    ctx.lineTo(xOf(0),     PAD.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(vals[0]));
+    for (let i = 1; i < n; i++) ctx.lineTo(xOf(i), yOf(vals[i]));
+    ctx.strokeStyle = lineClr;
+    ctx.lineWidth   = 2.2;
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+
+    // End dot
+    const ex = xOf(n - 1), ey = yOf(vals[n - 1]);
+    ctx.beginPath(); ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineClr; ctx.fill();
+    ctx.strokeStyle = '#0f0f1a'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // All-time high marker
+    if (highScore > START) {
+      const hsy = yOf(highScore);
+      if (hsy >= PAD.top && hsy <= PAD.top + plotH) {
+        ctx.strokeStyle = '#f0c04044';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([3, 5]);
+        ctx.beginPath(); ctx.moveTo(PAD.left, hsy); ctx.lineTo(PAD.left + plotW, hsy); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = '10px Segoe UI';
+        ctx.fillStyle = '#f0c04099';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('ATH', PAD.left + 4, hsy - 3);
+      }
+    }
+
+    // Hover highlight
+    if (highlightIdx >= 0 && highlightIdx < n) {
+      const hx = xOf(highlightIdx), hy = yOf(vals[highlightIdx]);
+      ctx.strokeStyle = '#ffffff18';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(hx, PAD.top); ctx.lineTo(hx, PAD.top + plotH); ctx.stroke();
+      ctx.beginPath(); ctx.arc(hx, hy, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = lineClr; ctx.fill();
+      ctx.strokeStyle = '#0f0f1a'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  // Tooltip
+  canvas.addEventListener('mousemove', e => {
+    if (history.length < 2) return;
+    const rect  = canvas.getBoundingClientRect();
+    const plotW = rect.width - PAD.left - PAD.right;
+    const n     = history.length;
+    const idx   = Math.round(((e.clientX - rect.left - PAD.left) / plotW) * (n - 1));
+    if (idx < 0 || idx >= n) { tooltip.style.display = 'none'; return; }
+    const val = history[idx];
+    const ret = (val - START) / START * 100;
+    const sign = ret >= 0 ? '+' : '';
+    tooltip.innerHTML =
+      `Flip <b>${idx}</b> &nbsp;|&nbsp; Balance <b>${val}</b> &nbsp;|&nbsp; ` +
+      `Return <b style="color:${ret>=0?'#40e090':'#e04060'}">${sign}${ret.toFixed(1)}%</b>`;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top  = (e.clientY - 10) + 'px';
+    drawChart(idx);
+  });
+  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; drawChart(); });
+  window.addEventListener('resize', () => { resizeCanvas(); drawChart(); });
+
+  /* ═══════════════════════════════════════
+     Game Logic
+  ═══════════════════════════════════════ */
+  function flip() {
+    if (busy || balance <= 0 || busted) return;
+    const wager = getWager();
+    if (wager < 1 || wager > balance) return;
+
+    busy = true;
+    flipBtn.disabled = true;
+    resultMsg.textContent = '';
+    resultMsg.className   = 'result-msg';
+    balanceEl.className   = 'balance-value';
+
+    const won      = Math.random() < 0.5;
+    const endAngle = won ? 1440 : 1620; // 4 full spins → heads (0°) or tails (180°)
+
+    // Cancel any in-progress animation and start a fresh one
+    coinEl.getAnimations().forEach(a => a.cancel());
+    coinEl.animate([
+      { transform: 'rotateY(0deg)',    offset: 0 },
+      { transform: 'rotateY(1080deg)', offset: 0.6 },
+      { transform: 'rotateY(1260deg)', offset: 0.8 },
+      { transform: `rotateY(${endAngle}deg)` },
+    ], { duration: 900, easing: 'ease-out', fill: 'forwards' });
+
+    setTimeout(() => {
+      if (won) {
+        balance += wager;
+        wins++;
+        resultMsg.textContent = `Heads! You won +${wager}`;
+        resultMsg.className   = 'result-msg win';
+        balanceEl.className   = 'balance-value win';
+      } else {
+        balance -= wager;
+        losses++;
+        resultMsg.textContent = `Tails! You lost −${wager}`;
+        resultMsg.className   = 'result-msg lose';
+        balanceEl.className   = 'balance-value lose';
+      }
+      flips++;
+      history.push(balance);
+      addHistoryChip(won, won ? wager : -wager);
+
+      // Update all-time high
+      if (balance > highScore) {
+        highScore = balance;
+      }
+
+      if (balance <= 0) {
+        balance = 0;
+        busted  = true;
+        resultMsg.textContent = 'Tails! You\'re busted.';
+      }
+
+      busy = false;
+      try { saveState(); } catch(e) { console.warn('saveState failed:', e); }
+      updateUI();
+
+      if (busted) {
+        setTimeout(() => showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust'), 700);
+      }
+    }, 950);
+  }
+
+  /* ═══════════════════════════════════════
+     Init
+  ═══════════════════════════════════════ */
+  loadState();
+  resizeCanvas();
+  updateUI();
+
+  // If already busted today, show overlay immediately
+  if (busted) {
+    showOverlay('💀', 'BUSTED', 'Your bankroll hit zero', 'bust');
+  }
+</script>
+</body>
+</html>
